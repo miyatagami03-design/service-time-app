@@ -55,3 +55,8 @@ th:nth-child(13){width:8.0%} th:nth-child(14){width:5.4%} th:nth-child(15){width
   .app{padding:8px}.topbar{align-items:flex-start}.title{font-size:17px}
   .actions{gap:4px}.btn{padding:5px 7px;font-size:10px}.version{font-size:10px}
 }
+
+.timeinput-btn{width:100%;min-width:82px;padding:10px 8px;border:1px solid #d1d5db;border-radius:10px;background:#fff;font-size:16px;font-weight:700}
+.timeinput-btn.empty{font-weight:500;color:#6b7280}
+.time-picker-row{display:flex;align-items:center;justify-content:center;gap:10px;margin:18px 0}
+.time-picker-row select{font-size:22px;padding:10px 14px;border:1px solid #d1d5db;border-radius:10px;background:#fff}

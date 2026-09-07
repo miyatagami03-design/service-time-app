@@ -73,7 +73,36 @@ function recordStep(g,col){
   }
   save();render();
 }
-function updateReservation(g,val){g.reservation_time=val||null;save();render()}
+let reservationTarget=null;
+function openReservation(g){
+  if(!g)return;
+  reservationTarget=g;
+  const dlg=document.getElementById("reservationDialog");
+  document.getElementById("reservationTitle").textContent=tableLabel(g)+"の予約時間";
+  const current=g.reservation_time?String(g.reservation_time).slice(0,5):"";
+  let [hh,mm]=current?current.split(":"):["18","00"];
+  document.getElementById("reservationHour").value=hh;
+  document.getElementById("reservationMinute").value=mm;
+  dlg.showModal();
+}
+function saveReservation(){
+  if(!reservationTarget)return;
+  const h=document.getElementById("reservationHour").value;
+  const m=document.getElementById("reservationMinute").value;
+  reservationTarget.reservation_time=h+":"+m;
+  save();
+  document.getElementById("reservationDialog").close();
+  reservationTarget=null;
+  render();
+}
+function clearReservation(){
+  if(!reservationTarget)return;
+  reservationTarget.reservation_time=null;
+  save();
+  document.getElementById("reservationDialog").close();
+  reservationTarget=null;
+  render();
+}
 function nextGroup(g){
   if(!confirm(tableLabel(g)+"を次の組に切り替えますか？\n現在の記録は履歴に保存されます。"))return;
   const hasAny=!!g.reservation_time||hasService(g);
@@ -107,8 +136,9 @@ function render(){
     }
 
     const tdRes=document.createElement("td");
-    const inp=document.createElement("input");inp.type="time";inp.className="timeinput";inp.value=g?.reservation_time?String(g.reservation_time).slice(0,5):"";
-    inp.onchange=()=>updateReservation(g,inp.value);tdRes.appendChild(inp);tr.appendChild(tdRes);
+    const rb=document.createElement("button");rb.type="button";rb.className="timeinput-btn"+(g?.reservation_time?"":" empty");
+    rb.textContent=g?.reservation_time?String(g.reservation_time).slice(0,5):"予約";
+    rb.onclick=()=>openReservation(g);tdRes.appendChild(rb);tr.appendChild(tdRes);
 
     const tdEl=document.createElement("td");
     const sp=document.createElement("span");sp.className="elapsed"+(twoHour(g)?" danger":"");sp.textContent=elapsedFrom(g?.arrival_at);
@@ -214,6 +244,30 @@ setInterval(()=>{
   render();
 },1000);
 
-if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js");
+if("serviceWorker" in navigator){
+  window.addEventListener("load",async()=>{
+    try{
+      const reg=await navigator.serviceWorker.register("./sw.js",{updateViaCache:"none"});
+      await reg.update();
+      let reloading=false;
+      navigator.serviceWorker.addEventListener("controllerchange",()=>{
+        if(reloading)return;
+        reloading=true;
+        location.reload();
+      });
+    }catch(err){
+      console.warn("Service Worker update failed:",err);
+    }
+  });
+}
+(function initReservationPicker(){
+  const hs=document.getElementById("reservationHour");
+  const ms=document.getElementById("reservationMinute");
+  for(let h=0;h<24;h++){const o=document.createElement("option");o.value=String(h).padStart(2,"0");o.textContent=o.value;hs.appendChild(o)}
+  for(let m=0;m<60;m+=5){const o=document.createElement("option");o.value=String(m).padStart(2,"0");o.textContent=o.value;ms.appendChild(o)}
+  document.getElementById("reservationSaveBtn").onclick=saveReservation;
+  document.getElementById("reservationClearBtn").onclick=clearReservation;
+})();
+
 render();
 })();

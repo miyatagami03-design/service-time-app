@@ -7,9 +7,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="接客時間管理">
-<link rel="manifest" href="./manifest.webmanifest">
+<link rel="manifest" href="./manifest.webmanifest?v=201">
 <link rel="apple-touch-icon" href="./icon-180.png">
-<link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="./style.css?v=201">
 <title>接客時間管理</title>
 </head>
 <body>
@@ -25,7 +25,7 @@
         <button id="linkBtn" class="btn" type="button">卓を連結</button>
         <button id="resetBtn" class="btn" type="button">今日をリセット</button>
       </div>
-      <button id="versionBtn" class="version" type="button">Ver.2.0</button>
+      <button id="versionBtn" class="version" type="button">Ver.2.0.1</button>
     </div>
   </div>
 
@@ -68,6 +68,10 @@
   <div class="dialog-body">
     <h3>更新履歴</h3>
     <div class="history-card">
+      <div class="history-title">Ver.2.0.1</div>
+      <div class="history-sub">予約時間の入力不具合を修正／アップデート時のキャッシュ更新を改善</div>
+    </div>
+    <div class="history-card">
       <div class="history-title">Ver.2.0</div>
       <div class="history-sub">卓連結／警告表示／取消確認／本日の履歴／更新履歴表示／アプリ名を「接客時間管理」に変更</div>
     </div>
@@ -92,6 +96,21 @@
   </div>
 </dialog>
 
-<script src="./app.js"></script>
+<dialog id="reservationDialog">
+  <div class="dialog-body">
+    <h3 id="reservationTitle">予約時間</h3>
+    <div class="time-picker-row">
+      <select id="reservationHour" aria-label="時"></select><span>:</span>
+      <select id="reservationMinute" aria-label="分"></select>
+    </div>
+    <div class="dialog-actions">
+      <button id="reservationClearBtn" class="btn" type="button">予約を消す</button>
+      <button class="btn" data-close="reservationDialog" type="button">キャンセル</button>
+      <button id="reservationSaveBtn" class="btn primary" type="button">決定</button>
+    </div>
+  </div>
+</dialog>
+
+<script src="./app.js?v=201"></script>
 </body>
 </html>
