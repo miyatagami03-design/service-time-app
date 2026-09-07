@@ -6,238 +6,58 @@
 <meta name="theme-color" content="#111827">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="接客タイム">
+<meta name="apple-mobile-web-app-title" content="接客時間管理">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-180.png">
-<title>接客タイム管理</title>
-<style>
-:root{--bg:#f7f7f8;--panel:#fff;--line:#d8dbe2;--text:#111827;--muted:#6b7280;--done:#e8f4ff;--done-line:#5a9bd5;--accent:#111827;--warn:#fff3cd;--milestone:#e11d48}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Noto Sans JP",sans-serif}
-button,input{font:inherit}
-.app{padding:8px 8px 18px}
-.topbar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:5px}
-.title{font-size:18px;font-weight:800}.sub{font-size:11px;color:var(--muted);margin-top:1px}.actions{display:flex;gap:6px}
-.btn{min-height:34px;border:1px solid var(--line);border-radius:9px;background:#fff;padding:5px 10px;font-size:11px;font-weight:700}
-.hint{font-size:11px;color:var(--muted);margin:0 0 5px}
-.board{overflow:hidden;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
-table{border-collapse:separate;border-spacing:0;width:100%;table-layout:fixed;font-size:11px}
-th,td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:2px;text-align:center;vertical-align:middle}
-th{background:#f2f3f5;font-weight:800;line-height:1.1;white-space:normal}
-tr:last-child td{border-bottom:0}th:last-child,td:last-child{border-right:0}
-.milestone-row th{height:20px;background:#fff;border-bottom:0;padding:1px;font-size:12px;color:var(--milestone);font-weight:900}
-.milestone30{border-right:3px solid var(--milestone)!important}.milestone60{border-right:3px solid var(--milestone)!important}
-.seatcell{width:26px;font-size:18px;font-weight:900;background:#f8f8f9}
-.timeinput{width:100%;min-width:0;min-height:32px;border:1px solid var(--line);border-radius:6px;background:#fff;padding:1px;font-size:11px;text-align:center}
-.elapsed{font-weight:900;font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap}
-.step{width:100%;min-width:0;min-height:40px;border:1px solid var(--line);border-radius:7px;background:#fff;padding:2px 1px;font-size:11px;font-weight:800;line-height:1.05}
-.step.done{background:var(--done);border-color:var(--done-line)}
-.step .t{display:block;font-size:11px;margin-top:3px;font-variant-numeric:tabular-nums}
-.next{width:100%;min-height:36px;border:1px solid var(--line);border-radius:7px;background:#fff;padding:2px;font-size:11px;font-weight:800}
-.late{background:var(--warn)!important}
-.footer{margin-top:5px;display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:10px}
-dialog{border:0;border-radius:16px;padding:0;max-width:520px;width:calc(100% - 32px)}dialog::backdrop{background:rgba(0,0,0,.35)}.dialog-body{padding:18px}.dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
-/* iPad横画面で全項目を収める */
-th:nth-child(1){width:2.7%}
-th:nth-child(2){width:6.7%}
-th:nth-child(3){width:6.1%}
-th:nth-child(4){width:5.8%}
-th:nth-child(5){width:5.8%}
-th:nth-child(6){width:5.8%}
-th:nth-child(7){width:6.2%}
-th:nth-child(8){width:7.2%}
-th:nth-child(9){width:5.3%}
-th:nth-child(10){width:8.0%}
-th:nth-child(11){width:6.5%}
-th:nth-child(12){width:7.1%}
-th:nth-child(13){width:8.0%}
-th:nth-child(14){width:5.4%}
-th:nth-child(15){width:6.4%}
-</style>
+<link rel="stylesheet" href="./style.css">
+<title>接客時間管理</title>
 </head>
 <body>
 <div class="app">
-<div class="topbar">
-  <div><div class="title">接客タイム管理</div><div id="dateLabel" class="sub"></div></div>
-  <div class="actions"><button id="historyBtn" class="btn" type="button">履歴</button><button id="resetBtn" class="btn" type="button">今日をリセット</button></div>
+  <div class="topbar">
+    <div><div class="title">接客時間管理</div><div id="dateLabel" class="sub"></div></div>
+    <div class="topright">
+      <div class="actions desktop">
+        <button id="historyBtn" class="btn">本日の履歴</button>
+        <button id="linkBtn" class="btn">卓を連結</button>
+        <button id="resetBtn" class="btn">今日をリセット</button>
+      </div>
+      <button id="versionBtn" class="version">Ver.2.0</button>
+    </div>
+  </div>
+
+  <div id="offlineBanner" class="offline">オフライン・同期待ち</div>
+
+  <section class="desktop">
+    <p class="hint">各項目をタップすると現在時刻を記録。記録済み項目をもう一度タップすると確認後に取り消します。</p>
+    <div class="board"><table><thead>
+      <tr class="milestone-row">
+        <th></th><th></th><th></th><th></th><th></th><th></th><th></th>
+        <th class="milestone30">30分経過</th><th></th><th></th><th class="milestone60">1時間経過</th><th></th><th></th><th></th><th></th>
+      </tr>
+      <tr>
+        <th>卓</th><th>予約時間</th><th>経過時間</th><th>来店</th><th>説明</th><th>前菜</th><th>鍋温め</th>
+        <th class="milestone30">鍋作り<br>終わり</th><th>山椒</th><th>あく取り<br>・スープ</th>
+        <th class="milestone60">〆の発注</th><th>〆作り<br>終わり</th><th>あがり<br>おしぼり</th><th>会計</th><th>回転</th>
+      </tr>
+    </thead><tbody id="body"></tbody></table></div>
+    <div class="footer"><span>複数端末でリアルタイム同期</span><span id="saveState">接続中…</span></div>
+  </section>
+
+  <section class="mobile">
+    <div id="mobileList">
+      <div class="mobile-head"><button id="mobileHistoryBtn" class="btn">本日の履歴</button></div>
+      <div id="cardList" class="mobile-list"></div>
+    </div>
+    <div id="mobileDetail" class="mobile-detail"></div>
+  </section>
 </div>
-<p class="hint">各項目をタップすると現在時刻を記録。もう一度タップすると取り消せます。</p>
 
-<div class="board">
-<table>
-<thead>
-<tr class="milestone-row">
-  <th></th><th></th><th></th><th></th><th></th><th></th><th></th>
-  <th class="milestone30">30分経過</th>
-  <th></th><th></th>
-  <th class="milestone60">1時間経過</th>
-  <th></th><th></th><th></th><th></th>
-</tr>
-<tr>
-  <th>卓</th><th>予約時間</th><th>経過時間</th><th>来店</th><th>説明</th><th>前菜</th><th>鍋温め</th>
-  <th class="milestone30">鍋作り<br>終わり</th>
-  <th>山椒</th><th>あく取り<br>・スープ</th>
-  <th class="milestone60">〆の発注</th>
-  <th>〆作り<br>終わり</th><th>あがり<br>おしぼり</th><th>会計</th><th>回転</th>
-</tr>
-</thead>
-<tbody id="body"></tbody>
-</table>
-</div>
+<dialog id="historyDialog"><div class="dialog-body"><h3>本日の履歴</h3><div id="historyContent" class="scroll"></div><div class="dialog-actions"><button class="btn" data-close="historyDialog">閉じる</button></div></div></dialog>
+<dialog id="versionDialog"><div class="dialog-body"><h3>更新履歴</h3><div class="history-card"><div class="history-title">Ver.2.0</div><div class="history-sub">複数端末同期／iPhone専用画面／卓連結／警告表示／取消確認／本日の履歴／オフライン同期待ち表示</div></div><div class="history-card"><div class="history-title">Ver.1.x</div><div class="history-sub">9卓表示、鍋温め・あく取り／スープ、30分・1時間ライン、文字サイズ調整</div></div><div class="dialog-actions"><button class="btn" data-close="versionDialog">閉じる</button></div></div></dialog>
+<dialog id="linkDialog"><div class="dialog-body"><h3>卓を連結</h3><div id="linkInstructions" class="history-sub">最初に代表卓を選び、そのあと連結する卓を選んでください。</div><div id="linkChoices" class="choice-grid"></div><div id="linkWarning" class="statusnote"></div><div class="dialog-actions"><button class="btn" data-close="linkDialog">キャンセル</button><button id="confirmLinkBtn" class="btn primary">連結する</button></div></div></dialog>
 
-<div class="footer"><span>データはこの端末内に保存されます。</span><span id="saveState">保存済み</span></div>
-</div>
-
-<dialog id="historyDialog">
-<div class="dialog-body">
-<h3 style="margin:0 0 12px">今日の回転履歴</h3>
-<div id="historyContent" style="max-height:60vh;overflow:auto"></div>
-<div class="dialog-actions"><button id="closeHistory" class="btn" type="button">閉じる</button></div>
-</div>
-</dialog>
-
-<script>
-(() => {
-const STEPS=["来店","説明","前菜","鍋温め","鍋作り終わり","山椒","あく取り・スープ","〆の発注","〆作り終わり","あがりおしぼり","会計"];
-const KEY="service-time-pwa-v1";
-const todayKey=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
-const timeFmt=new Intl.DateTimeFormat("ja-JP",{hour:"2-digit",minute:"2-digit",hour12:false});
-const dateFmt=new Intl.DateTimeFormat("ja-JP",{year:"numeric",month:"long",day:"numeric",weekday:"short"});
-const body=document.getElementById("body"),saveState=document.getElementById("saveState");
-
-function uid(){return (crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random()))}
-function newSeat(n){return{id:uid(),seat:String(n),reservation:"",arrivedAt:null,logs:{},round:1}}
-function normalizeLogs(logs={}){
-  const x={...logs};
-  if(x["鍋のみスタート"]&&!x["鍋温め"])x["鍋温め"]=x["鍋のみスタート"];
-  if(x["スープ追加"]&&!x["あく取り・スープ"])x["あく取り・スープ"]=x["スープ追加"];
-  delete x["鍋のみスタート"]; delete x["スープ追加"];
-  return x;
-}
-function defaultState(){return{date:todayKey(),seats:Array.from({length:9},(_,i)=>newSeat(i+1)),history:[]}}
-function normalizeState(s){
-  if(!s||s.date!==todayKey())return defaultState();
-  const seats=Array.from({length:9},(_,i)=>{
-    const old=s.seats?.[i]||newSeat(i+1);
-    return {...old,seat:String(i+1),logs:normalizeLogs(old.logs)};
-  });
-  const history=(s.history||[]).map(h=>({...h,logs:normalizeLogs(h.logs)}));
-  return{date:s.date,seats,history};
-}
-function load(){try{const raw=localStorage.getItem(KEY);return raw?normalizeState(JSON.parse(raw)):defaultState()}catch(e){return defaultState()}}
-let state=load();
-
-function save(){localStorage.setItem(KEY,JSON.stringify(state));saveState.textContent="保存済み"}
-function markSaving(){saveState.textContent="保存中…";setTimeout(save,60)}
-function elapsed(ms){const sec=Math.max(0,Math.floor(ms/1000));return String(Math.floor(sec/3600)).padStart(2,"0")+":"+String(Math.floor((sec%3600)/60)).padStart(2,"0")+":"+String(sec%60).padStart(2,"0")}
-function isLate(seat){if(!seat.reservation||seat.arrivedAt)return false;const [h,m]=seat.reservation.split(":").map(Number),now=new Date(),r=new Date();r.setHours(h,m,0,0);return now>r}
-function labelHtml(step){return step.replace("鍋作り終わり","鍋作り<br>終わり").replace("あく取り・スープ","あく取り<br>・スープ").replace("〆作り終わり","〆作り<br>終わり").replace("あがりおしぼり","あがり<br>おしぼり")}
-
-function render(){
-  document.getElementById("dateLabel").textContent=dateFmt.format(new Date());
-  body.innerHTML="";
-  state.seats.forEach((seat,index)=>{
-    const tr=document.createElement("tr");
-
-    const tdSeat=document.createElement("td");
-    tdSeat.className="seatcell";
-    tdSeat.textContent=String(index+1);
-    tr.appendChild(tdSeat);
-
-    const tdRes=document.createElement("td"),inpRes=document.createElement("input");
-    inpRes.type="time"; inpRes.className="timeinput"; inpRes.value=seat.reservation;
-    inpRes.addEventListener("input",()=>{seat.reservation=inpRes.value;markSaving()});
-    tdRes.appendChild(inpRes); tr.appendChild(tdRes);
-
-    const tdElapsed=document.createElement("td"),sp=document.createElement("span");
-    sp.className="elapsed";
-    sp.textContent=seat.arrivedAt?elapsed(Date.now()-seat.arrivedAt):"--:--:--";
-    tdElapsed.appendChild(sp); tr.appendChild(tdElapsed);
-
-    STEPS.forEach(step=>{
-      const td=document.createElement("td");
-      if(step==="来店"&&isLate(seat))td.classList.add("late");
-      if(step==="鍋作り終わり")td.classList.add("milestone30");
-      if(step==="〆の発注")td.classList.add("milestone60");
-
-      const b=document.createElement("button");
-      b.type="button";
-      b.className="step"+(seat.logs[step]?" done":"");
-      b.innerHTML="<span>"+labelHtml(step)+"</span>"+(seat.logs[step]?"<span class='t'>"+seat.logs[step]+"</span>":"");
-      b.addEventListener("click",()=>{
-        if(seat.logs[step]){
-          delete seat.logs[step];
-          if(step==="来店")seat.arrivedAt=null;
-        }else{
-          const now=new Date();
-          seat.logs[step]=timeFmt.format(now);
-          if(step==="来店")seat.arrivedAt=now.getTime();
-        }
-        markSaving(); render();
-      });
-
-      td.appendChild(b); tr.appendChild(td);
-    });
-
-    const tdNext=document.createElement("td"),nb=document.createElement("button");
-    nb.type="button"; nb.className="next"; nb.textContent="次の組";
-    nb.addEventListener("click",()=>{
-      const hasAny=seat.reservation||Object.keys(seat.logs).length;
-      if(hasAny)state.history.push({
-        seat:String(index+1),round:seat.round,reservation:seat.reservation,
-        arrivedAt:seat.arrivedAt,logs:{...seat.logs},finishedAt:Date.now()
-      });
-      seat.round+=1; seat.reservation=""; seat.arrivedAt=null; seat.logs={};
-      markSaving(); render();
-    });
-    tdNext.appendChild(nb); tr.appendChild(tdNext);
-
-    body.appendChild(tr);
-  });
-}
-
-function renderHistory(){
-  const box=document.getElementById("historyContent");
-  box.innerHTML="";
-  if(!state.history.length){box.textContent="まだ履歴はありません。";return}
-  [...state.history].reverse().forEach(h=>{
-    const card=document.createElement("div");
-    card.style.cssText="border:1px solid #d8dbe2;border-radius:12px;padding:10px;margin-bottom:8px";
-    const title=document.createElement("div"); title.style.fontWeight="800";
-    title.textContent=h.seat+"卓・"+h.round+"組目　終了 "+timeFmt.format(new Date(h.finishedAt));
-    const sub=document.createElement("div");
-    sub.style.cssText="font-size:12px;color:#6b7280;margin-top:5px;line-height:1.6";
-    const parts=[]; if(h.reservation)parts.push("予約 "+h.reservation);
-    STEPS.forEach(s=>{if(h.logs[s])parts.push(s+" "+h.logs[s])});
-    sub.textContent=parts.join(" ｜ ")||"記録なし";
-    card.append(title,sub); box.appendChild(card);
-  });
-}
-
-document.getElementById("historyBtn").addEventListener("click",()=>{renderHistory();document.getElementById("historyDialog").showModal()});
-document.getElementById("closeHistory").addEventListener("click",()=>document.getElementById("historyDialog").close());
-document.getElementById("resetBtn").addEventListener("click",()=>{
-  if(confirm("今日の記録と履歴をすべて消しますか？")){
-    state=defaultState(); save(); render();
-  }
-});
-
-setInterval(()=>{
-  document.querySelectorAll("#body tr").forEach((tr,i)=>{
-    const seat=state.seats[i]; if(!seat)return;
-    const el=tr.querySelector(".elapsed");
-    if(el)el.textContent=seat.arrivedAt?elapsed(Date.now()-seat.arrivedAt):"--:--:--";
-    const arrivalCell=tr.children[3];
-    if(arrivalCell)arrivalCell.classList.toggle("late",isLate(seat));
-  })
-},1000);
-
-if("serviceWorker"in navigator){
-  window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}))
-}
-
-save(); render();
-})();
-</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="./app.js"></script>
 </body>
 </html>
