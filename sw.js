@@ -1,9 +1,9 @@
-const CACHE='service-time-local-v201-20260908';
+const CACHE='service-time-local-v202-20260908';
 const ASSETS=[
   './',
   './index.html',
-  './style.css?v=201',
-  './app.js?v=201',
+  './style.css?v=202',
+  './app.js?v=202',
   './manifest.webmanifest?v=201',
   './icon-180.png',
   './icon-192.png',

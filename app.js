@@ -137,7 +137,7 @@ function render(){
 
     const tdRes=document.createElement("td");
     const rb=document.createElement("button");rb.type="button";rb.className="timeinput-btn"+(g?.reservation_time?"":" empty");
-    rb.textContent=g?.reservation_time?String(g.reservation_time).slice(0,5):"予約";
+    rb.textContent=g?.reservation_time?String(g.reservation_time).slice(0,5):"";
     rb.onclick=()=>openReservation(g);tdRes.appendChild(rb);tr.appendChild(tdRes);
 
     const tdEl=document.createElement("td");
