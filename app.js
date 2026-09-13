@@ -8,6 +8,7 @@ const STEP_DEFS=[
 ];
 const COL_TO_LABEL=Object.fromEntries(STEP_DEFS.map(([l,c])=>[c,l]));
 const STORAGE_KEY="service-time-local-v2";
+const ALERT_KEY="service-time-alerts-v21";
 const timeFmt=new Intl.DateTimeFormat("ja-JP",{timeZone:"Asia/Tokyo",hour:"2-digit",minute:"2-digit",hour12:false});
 const dateFmt=new Intl.DateTimeFormat("ja-JP",{timeZone:"Asia/Tokyo",year:"numeric",month:"long",day:"numeric",weekday:"short"});
 const JST_DATE=()=>new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Tokyo",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
@@ -15,13 +16,19 @@ const JST_DATE=()=>new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Tokyo",year:"
 let state=loadState();
 let linkRepresentative=null;
 let linkSelected=new Set();
+let moveSource=null;
+let moveTarget=null;
+let audioCtx=null;
+let alertLoopTimer=null;
+let alertActive=false;
 
 function blankGroup(n){
   return {
     id:crypto.randomUUID?crypto.randomUUID():String(Date.now())+"-"+n+"-"+Math.random(),
     representative_table:n,linked_tables:[n],reservation_time:null,
     arrival_at:null,explanation_at:null,starter_at:null,pot_warm_at:null,pot_finish_at:null,
-    sansho_at:null,soup_at:null,closing_order_at:null,closing_finish_at:null,oshibori_at:null,checkout_at:null
+    sansho_at:null,soup_at:null,closing_order_at:null,closing_finish_at:null,oshibori_at:null,checkout_at:null,
+    pot_warm_alerted_at:null
   };
 }
 function freshState(){
@@ -53,8 +60,20 @@ function isLate(g){
   const r=new Date(jp);r.setHours(h,m,0,0);
   return jp>=r;
 }
-function potWarn(g){return !!(g?.pot_warm_at&&!g.pot_finish_at&&!g.checkout_at&&(Date.now()-new Date(g.pot_warm_at).getTime()>=330000))}
-function twoHour(g){return !!(g?.arrival_at&&!g.checkout_at&&(Date.now()-new Date(g.arrival_at).getTime()>=7200000))}
+function elapsedWarn(g,startCol,endCol,ms){return !!(g?.[startCol]&&!g?.[endCol]&&!g?.checkout_at&&(Date.now()-new Date(g[startCol]).getTime()>=ms))}
+function potWarn(g){return elapsedWarn(g,"pot_warm_at","pot_finish_at",330000)}
+function arrivalWarn(g){return !!(g?.arrival_at&&!g.checkout_at&&(Date.now()-new Date(g.arrival_at).getTime()>=6300000))}
+function nineMinWarn(g,col){
+  const rules={
+    pot_warm_at:["starter_at","pot_warm_at"],
+    sansho_at:["pot_finish_at","sansho_at"],
+    soup_at:["sansho_at","soup_at"],
+    closing_order_at:["soup_at","closing_order_at"],
+    oshibori_at:["closing_finish_at","oshibori_at"]
+  };
+  const r=rules[col];
+  return r?elapsedWarn(g,r[0],r[1],540000):false;
+}
 function labelHtml(step){
   return step.replace("鍋作り終わり","鍋作り<br>終わり")
     .replace("あく取り・スープ","あく取り<br>・スープ")
@@ -68,8 +87,10 @@ function recordStep(g,col){
     const label=COL_TO_LABEL[col];
     if(!confirm("「"+label+"」の記録を取り消しますか？"))return;
     g[col]=null;
+    if(col==="pot_warm_at")g.pot_warm_alerted_at=null;
   }else{
     g[col]=new Date().toISOString();
+    if(col==="pot_warm_at")g.pot_warm_alerted_at=null;
   }
   save();render();
 }
@@ -141,7 +162,7 @@ function render(){
     rb.onclick=()=>openReservation(g);tdRes.appendChild(rb);tr.appendChild(tdRes);
 
     const tdEl=document.createElement("td");
-    const sp=document.createElement("span");sp.className="elapsed"+(twoHour(g)?" danger":"");sp.textContent=elapsedFrom(g?.arrival_at);
+    const sp=document.createElement("span");sp.className="elapsed"+(arrivalWarn(g)?" danger":"");sp.textContent=elapsedFrom(g?.arrival_at);
     tdEl.appendChild(sp);tr.appendChild(tdEl);
 
     for(const [label,col] of STEP_DEFS){
@@ -150,7 +171,7 @@ function render(){
       if(label==="鍋作り終わり")td.classList.add("milestone30");
       if(label==="〆の発注")td.classList.add("milestone60");
       const b=document.createElement("button");b.type="button";
-      b.className="step"+(g?.[col]?" done":"")+(col==="pot_finish_at"&&potWarn(g)?" warn":"");
+      b.className="step"+(g?.[col]?" done":"")+((col==="pot_finish_at"&&potWarn(g))||nineMinWarn(g,col)?" warn":"");
       b.innerHTML="<span>"+labelHtml(label)+"</span>"+(g?.[col]?"<span class='t'>"+fmtTime(g[col])+"</span>":"");
       b.onclick=()=>recordStep(g,col);td.appendChild(b);tr.appendChild(td);
     }
@@ -231,16 +252,158 @@ function confirmLink(){
   save();document.getElementById("linkDialog").close();render();
 }
 
+
+function openMoveDialog(){
+  moveSource=null;moveTarget=null;renderMoveChoices();document.getElementById("moveDialog").showModal();
+}
+function renderMoveChoices(){
+  const box=document.getElementById("moveChoices");box.innerHTML="";
+  for(let n=1;n<=9;n++){
+    const g=groupForTable(n),b=document.createElement("button");
+    b.type="button";b.className="choice";b.textContent=n+"卓";
+    if(n===moveSource||n===moveTarget)b.classList.add("selected");
+    b.onclick=()=>{
+      if(moveSource===null){
+        if(!g||g.representative_table!==n||g.linked_tables.length>1)return alert("連結中の卓は席移動できません。先に連結を解除してください。");
+        if(!g.reservation_time&&!hasService(g))return alert("この卓には移動する記録がありません。");
+        moveSource=n;
+      }else if(n===moveSource){
+        moveSource=null;moveTarget=null;
+      }else{
+        const target=groupForTable(n);
+        if(!target||target.representative_table!==n||target.linked_tables.length>1)return alert("連結中の卓には移動できません。");
+        if(target.reservation_time||hasService(target))return alert("移動先の卓にはすでに記録があります。");
+        moveTarget=n;
+      }
+      renderMoveChoices();
+    };
+    box.appendChild(b);
+  }
+  document.getElementById("moveInstructions").textContent=moveSource===null?"移動元の卓を選んでください。":moveTarget===null?moveSource+"卓 → 移動先の卓を選んでください。":moveSource+"卓 → "+moveTarget+"卓へ移動";
+  document.getElementById("moveWarning").textContent="予約時間・来店以降の記録をまとめて移動します。";
+}
+function confirmMove(){
+  if(moveSource===null||moveTarget===null)return alert("移動元と移動先を選んでください。");
+  const source=groupForTable(moveSource),target=groupForTable(moveTarget);
+  if(!source||!target)return;
+  if(!confirm(moveSource+"卓の記録を"+moveTarget+"卓へ移動しますか？"))return;
+  state.groups=state.groups.filter(g=>g.id!==source.id&&g.id!==target.id);
+  source.representative_table=moveTarget;
+  source.linked_tables=[moveTarget];
+  state.groups.push(blankGroup(moveSource),source);
+  state.groups.sort((a,b)=>a.representative_table-b.representative_table);
+  save();document.getElementById("moveDialog").close();render();
+}
+function primeAudio(){
+  try{
+    audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==="suspended")audioCtx.resume();
+  }catch{}
+}
+function alertEnabled(){return localStorage.getItem(ALERT_KEY)==="1"}
+function setAlertEnabled(on){
+  localStorage.setItem(ALERT_KEY,on?"1":"0");
+  syncAlertToggle();
+}
+function syncAlertToggle(){
+  const b=document.getElementById("alertToggle");
+  if(!b)return;
+  const on=alertEnabled();
+  b.classList.toggle("on",on);
+  b.setAttribute("aria-checked",on?"true":"false");
+}
+function syncStopButton(){
+  const b=document.getElementById("stopAlertBtn");
+  if(b)b.hidden=!alertActive;
+}
+async function requestNotificationPermission(){
+  try{
+    if("Notification" in window&&Notification.permission==="default"){
+      await Notification.requestPermission();
+    }
+  }catch{}
+}
+async function toggleAlerts(){
+  const next=!alertEnabled();
+  if(!next){setAlertEnabled(false);stopAlertSound();return}
+  primeAudio();
+  await requestNotificationPermission();
+  setAlertEnabled(true);
+}
+function playAlertSound(){
+  if(!alertEnabled())return;
+  try{
+    primeAudio();
+    if(!audioCtx)return;
+    const now=audioCtx.currentTime;
+    [0,.22,.44].forEach((offset,i)=>{
+      const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
+      osc.connect(gain);gain.connect(audioCtx.destination);
+      osc.type="sine";osc.frequency.value=i===2?1046:880;
+      gain.gain.setValueAtTime(.0001,now+offset);
+      gain.gain.exponentialRampToValueAtTime(.24,now+offset+.015);
+      gain.gain.exponentialRampToValueAtTime(.0001,now+offset+.16);
+      osc.start(now+offset);osc.stop(now+offset+.18);
+    });
+  }catch{}
+}
+function startAlertSound(){
+  if(!alertEnabled())return;
+  stopAlertSound();
+  alertActive=true;syncStopButton();
+  playAlertSound();
+  alertLoopTimer=setInterval(playAlertSound,6500);
+}
+function stopAlertSound(){
+  if(alertLoopTimer!==null){clearInterval(alertLoopTimer);alertLoopTimer=null}
+  alertActive=false;syncStopButton();
+}
+async function showSystemNotification(title,options){
+  if(!alertEnabled())return;
+  try{
+    const opts={...options,requireInteraction:true,silent:false};
+    if("serviceWorker" in navigator){
+      const reg=await navigator.serviceWorker.ready;
+      if(reg&&reg.showNotification){await reg.showNotification(title,opts);return}
+    }
+    if("Notification" in window&&Notification.permission==="granted")new Notification(title,opts);
+  }catch{}
+}
+function sendPotAlert(g){
+  if(!alertEnabled())return false;
+  const text=tableLabel(g)+"の鍋温めから5分30秒経過しました";
+  startAlertSound();
+  if("Notification" in window&&Notification.permission==="granted"){
+    showSystemNotification("鍋温めアラート",{body:text,tag:"pot-"+g.id,renotify:true});
+  }
+  return true;
+}
+function checkPotAlerts(){
+  let changed=false;
+  for(const g of state.groups){
+    if(g.pot_warm_at&&!g.pot_finish_at&&!g.checkout_at&&(Date.now()-new Date(g.pot_warm_at).getTime()>=330000)&&g.pot_warm_alerted_at!==g.pot_warm_at){
+      if(sendPotAlert(g)){g.pot_warm_alerted_at=g.pot_warm_at;changed=true}
+    }
+  }
+  if(changed)save();
+}
+
+
 document.getElementById("historyBtn").onclick=()=>{renderHistory();document.getElementById("historyDialog").showModal()};
+document.getElementById("moveBtn").onclick=openMoveDialog;
 document.getElementById("linkBtn").onclick=openLinkDialog;
 document.getElementById("resetBtn").onclick=resetToday;
 document.getElementById("versionBtn").onclick=()=>document.getElementById("versionDialog").showModal();
 document.getElementById("confirmLinkBtn").onclick=confirmLink;
+document.getElementById("confirmMoveBtn").onclick=confirmMove;
+document.getElementById("alertToggle").onclick=toggleAlerts;
+document.getElementById("stopAlertBtn").onclick=stopAlertSound;
 document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>document.getElementById(b.dataset.close).close());
 
 setInterval(()=>{
   const today=JST_DATE();
   if(today!==state.date){state=freshState();save()}
+  checkPotAlerts();
   render();
 },1000);
 
@@ -269,5 +432,8 @@ if("serviceWorker" in navigator){
   document.getElementById("reservationClearBtn").onclick=clearReservation;
 })();
 
+syncAlertToggle();
+syncStopButton();
+checkPotAlerts();
 render();
 })();
