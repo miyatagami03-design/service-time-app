@@ -7,9 +7,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="接客時間管理">
-<link rel="manifest" href="./manifest.webmanifest?v=216">
+<link rel="manifest" href="./manifest.webmanifest?v=220">
 <link rel="apple-touch-icon" href="./icon-180.png">
-<link rel="stylesheet" href="./style.css?v=216">
+<link rel="stylesheet" href="./style.css?v=220">
 <title>接客時間管理</title>
 </head>
 <body>
@@ -28,7 +28,7 @@
         <button id="stopAlertBtn" class="btn alert-stop" type="button" hidden>アラート停止</button>
         <button id="resetBtn" class="btn" type="button">今日をリセット</button>
       </div>
-      <button id="versionBtn" class="version" type="button">Ver.2.1.6</button>
+      <button id="versionBtn" class="version" type="button">Ver.2.2.0</button>
     </div>
   </div>
 
@@ -45,7 +45,7 @@
           <th></th><th></th><th></th><th></th>
         </tr>
         <tr>
-          <th>卓</th><th>予約時間</th><th>経過時間</th><th>来店</th><th>説明</th><th>前菜</th><th>鍋温め</th>
+          <th>卓</th><th>予約時間<br>・コース</th><th>経過時間</th><th>来店</th><th>説明</th><th>前菜</th><th>鍋温め</th>
           <th class="milestone30">鍋作り<br>終わり</th>
           <th>山椒</th><th>あく取り<br>・スープ</th>
           <th class="milestone60">〆の発注</th>
@@ -70,6 +70,10 @@
 <dialog id="versionDialog">
   <div class="dialog-body">
     <h3>更新履歴</h3>
+    <div class="history-card">
+      <div class="history-title">Ver.2.2.0</div>
+      <div class="history-sub">卓ごとにコース（通常／鴨づくし／極み）を選択可能に／鴨づくし・極みは追加項目（アミューズ・ワンタン・副材料）を下の行に表示</div>
+    </div>
     <div class="history-card">
       <div class="history-title">Ver.2.1.6</div>
       <div class="history-sub">HTML Audioを主音源、Web Audioを予備としてアラーム音を安定化</div>
@@ -125,6 +129,14 @@
   </div>
 </dialog>
 
+<dialog id="courseDialog">
+  <div class="dialog-body">
+    <h3 id="courseTitle">コース</h3>
+    <div id="courseChoices" class="choice-grid"></div>
+    <div class="dialog-actions"><button class="btn" data-close="courseDialog" type="button">キャンセル</button></div>
+  </div>
+</dialog>
+
 <dialog id="reservationDialog">
   <div class="dialog-body">
     <h3 id="reservationTitle">予約時間</h3>
@@ -140,6 +152,6 @@
   </div>
 </dialog>
 
-<script src="./app.js?v=216"></script>
+<script src="./app.js?v=220"></script>
 </body>
 </html>
