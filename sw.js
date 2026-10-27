@@ -1,10 +1,10 @@
-const CACHE='service-time-local-v220-20261015';
+const CACHE='service-time-local-v230-20261026';
 const ASSETS=[
   './',
   './index.html',
-  './style.css?v=220',
-  './app.js?v=220',
-  './manifest.webmanifest?v=220'
+  './style.css?v=230',
+  './app.js?v=230',
+  './manifest.webmanifest?v=230'
 ];
 self.addEventListener('install',event=>{
   self.skipWaiting();
