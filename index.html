@@ -7,9 +7,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="接客時間管理">
-<link rel="manifest" href="./manifest.webmanifest?v=231">
+<link rel="manifest" href="./manifest.webmanifest?v=240">
 <link rel="apple-touch-icon" href="./icon-180.png">
-<link rel="stylesheet" href="./style.css?v=231">
+<link rel="stylesheet" href="./style.css?v=240">
 <title>接客時間管理</title>
 </head>
 <body>
@@ -28,7 +28,7 @@
         <button id="stopAlertBtn" class="btn alert-stop" type="button" hidden>アラート停止</button>
         <button id="resetBtn" class="btn" type="button">今日をリセット</button>
       </div>
-      <button id="versionBtn" class="version" type="button">Ver.2.3.1</button>
+      <button id="versionBtn" class="version" type="button">Ver.2.4.0</button>
     </div>
   </div>
 
@@ -70,6 +70,10 @@
 <dialog id="versionDialog">
   <div class="dialog-body">
     <h3>更新履歴</h3>
+    <div class="history-card">
+      <div class="history-title">Ver.2.4.0</div>
+      <div class="history-sub">ポイント（一休／ぐるなび／食べログV）の引き忘れ防止：会計ボタンにポイント名を表示し、来店から1時間30分でオレンジに強調</div>
+    </div>
     <div class="history-card">
       <div class="history-title">Ver.2.3.1</div>
       <div class="history-sub">単品は来店・説明・会計以外をグレー表示（グレーの項目はタップで追加注文として記録可能）</div>
@@ -142,6 +146,8 @@
     <h3 id="courseTitle">コース</h3>
     <div id="courseChoices" class="choice-grid"></div>
     <button id="drinkToggle" class="drink-toggle" type="button"></button>
+    <div class="point-label">ポイント利用（会計時）</div>
+    <div id="pointChoices" class="point-grid"></div>
     <div class="dialog-actions">
       <button class="btn" data-close="courseDialog" type="button">キャンセル</button>
       <button id="courseSaveBtn" class="btn primary" type="button">決定</button>
@@ -164,6 +170,6 @@
   </div>
 </dialog>
 
-<script src="./app.js?v=231"></script>
+<script src="./app.js?v=240"></script>
 </body>
 </html>
